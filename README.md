@@ -35,6 +35,8 @@ services:
     environment:
       # use your own wrap+ key
       - LICENSE=''
+      - PROTOCOL=WireGuard
+      # - PROTOCOL=MASQUE # MASQUE or WireGuard for tunnel protocol
     logging:
       driver: json-file
       options:
