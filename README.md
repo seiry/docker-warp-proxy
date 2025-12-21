@@ -22,8 +22,6 @@ SOCKS5 proxy server will be listening at port 40000.
 ### docker-compose
 
 ```yml
-version: "3.0"
-
 services:
   cloudflare-warp-proxy:
     image: seiry/cloudflare-warp-proxy
