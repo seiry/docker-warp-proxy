@@ -7,6 +7,12 @@ permissions:
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number to build a beta image for (tagged pr-<number>)'
+        required: true
+        type: string
 
 jobs:
   docker:
@@ -14,22 +20,22 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       -
         name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -37,19 +43,20 @@ jobs:
       -
         name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cloudflare-warp-proxy
             ghcr.io/${{ github.repository_owner }}/cloudflare-warp-proxy
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=beta,enable=${{ contains(github.ref_name, 'beta') }}
-            type=raw,value=latest,enable=${{ !contains(github.ref_name, 'beta') }}
+            type=raw,value=beta,enable=${{ github.event_name == 'release' && contains(github.ref_name, 'beta') }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !contains(github.ref_name, 'beta') }}
+            type=raw,value=pr-${{ github.event.inputs.pr }},enable=${{ github.event_name == 'workflow_dispatch' }}
       -
         name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
