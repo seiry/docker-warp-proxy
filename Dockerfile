@@ -2,7 +2,6 @@ ARG DEBIAN_RELEASE=bullseye
 ARG LICENSE=''
 FROM docker.io/debian:$DEBIAN_RELEASE-slim
 ARG DEBIAN_RELEASE
-COPY entrypoint.sh /
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LICENSE=${LICENSE}
 
@@ -15,6 +14,8 @@ RUN	curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --out
 	echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/  $DEBIAN_RELEASE main" | tee /etc/apt/sources.list.d/cloudflare-client.list && \
 	apt update && \
 	apt install cloudflare-warp -y --no-install-recommends
+
+COPY entrypoint.sh /
 
 RUN	apt remove -y curl && \
 	apt clean -y && \

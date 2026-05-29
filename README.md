@@ -34,9 +34,9 @@ services:
     environment:
       # use your own wrap+ key or zero trust key.
       - LICENSE=''
-      # endpoint overrides, see "override endpoints" below
-      # - OVERRIDE_API_ENDPOINT=1.2.3.4
-      # - OVERRIDE_WARP_ENDPOINT=203.0.113.0:500
+    # to enroll into a Zero Trust org, mount a full MDM config — see "managed deployment" below
+    # volumes:
+    #   - ./mdm.xml:/var/lib/cloudflare-warp/mdm.xml:ro
     logging:
       driver: json-file
       options:
@@ -44,35 +44,82 @@ services:
 
 ```
 
-## override endpoints
+## managed deployment (Zero Trust)
 
-You can override the IPs the WARP client talks to by setting the environment variables
-below. On startup the entrypoint writes any that are set into `/var/lib/cloudflare-warp/mdm.xml`
-as the matching [MDM deployment parameters](https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/).
-This is mainly for Cloudflare China local-network partners or third-party network partners.
+To join a Cloudflare Zero Trust organization — e.g. to route through a China local-network
+partner or third-party network partner — mount a full [MDM config](https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/)
+at `/var/lib/cloudflare-warp/mdm.xml`. `warp-svc` reads it on startup and enrolls the device
+using a **service token**. The same file pins the partner's endpoint overrides
+(`override_warp_endpoint`, etc.) and puts the client into proxy mode.
 
-| env var | MDM parameter | value | notes |
-| --- | --- | --- | --- |
-| `OVERRIDE_API_ENDPOINT` | [`override_api_endpoint`](https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/#override_api_endpoint) | IP, e.g. `1.2.3.4` | IP used to reach the client orchestration API |
-| `OVERRIDE_WARP_ENDPOINT` | [`override_warp_endpoint`](https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/parameters/#override_warp_endpoint) | `IP:UDP_PORT`, e.g. `203.0.113.0:500` | IP and UDP port used to send traffic to Cloudflare's edge |
 
+### 1. create a service token with enrollment permission
+
+- **Access controls → Service credentials → Service Tokens → Create Service Token** — copy the
+  Client ID (ends in `.access`) and Client Secret (shown only once).
+- **Team & Resources → Devices → Management → Device enrollment permissions → Manage → Policies
+  → Create policy**, set **Action = `Service Auth`** (not `Allow` — `Allow` does not work for
+  service tokens), Selector = your token, then add the policy to the enrollment permissions and
+  **Save**.
+
+  doc: https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/device-enrollment/#check-for-service-token
+
+### 2. write `mdm.xml`
+
+```xml
+<dict>
+    <!-- China / third-party network partner endpoints -->
+    <key>override_api_endpoint</key>
+    <string>1.1.1.1</string>
+    <key>override_doh_endpoint</key>
+    <string>1.1.1.1</string>
+    <key>override_warp_endpoint</key>
+    <string>1.1.1.1:443</string>
+
+    <!-- Zero Trust enrollment via a service token -->
+    <key>organization</key>
+    <string>your-team-name</string>
+    <key>auth_client_id</key>
+    <string>xxxxxxxx.access</string>
+    <key>auth_client_secret</key>
+    <string>xxxxxxxxxxxxxxxx</string>
+
+    <!-- proxy mode only supports MASQUE -->
+    <key>warp_tunnel_protocol</key>
+    <string>masque</string>
+
+    <!-- run as a local SOCKS proxy on 40001 (socat forwards 40000 -> 40001) -->
+    <key>service_mode</key>
+    <string>proxy</string>
+    <key>proxy_port</key>
+    <integer>40001</integer>
+    <key>onboarding</key>
+    <false/>
+</dict>
 ```
-docker run -d -p 40000:40000 --restart unless-stopped \
-  -e OVERRIDE_API_ENDPOINT=1.2.3.4 \
-  -e OVERRIDE_WARP_ENDPOINT=203.0.113.0:500 \
-  seiry/cloudflare-warp-proxy
-```
 
-> Remember to allow the new IP(s) through your firewall.
+`service_mode`/`proxy_port` put the client into proxy mode locally. The Cloudflare One
+Client gives precedence to local settings, so this overrides the org's device profile —
+keep `proxy_port` at `40001` to match the `socat` forward (`40000 → 40001`) in the container.
 
-If you need other MDM parameters (e.g. `organization`, service tokens), mount your own
-full config instead — a mounted `mdm.xml` takes precedence over the `OVERRIDE_*` variables:
+### 3. run with the file mounted
 
 ```
 docker run -d -p 40000:40000 --restart unless-stopped \
   -v ./mdm.xml:/var/lib/cloudflare-warp/mdm.xml:ro \
   seiry/cloudflare-warp-proxy
 ```
+
+A service-token enrolled device shows up under **My Team → Devices** with email
+`non_identity@<team-name>.cloudflareaccess.com`.
+
+### 4. (optional) set proxy mode in the dashboard instead
+
+Instead of `service_mode`/`proxy_port` in `mdm.xml` above, you can manage the mode centrally:
+in **Settings → WARP Client → Device settings**, use a profile that targets this device (match
+e.g. its `non_identity@…` email so you don't change other users) and set **Service mode = Proxy
+mode, port `40001`**.
+
 
 ## test
 
@@ -103,3 +150,6 @@ gateway=off
 
 * new version of cloudflare warp (rust version), now only allow using `MASQUE` protocol in proxy mode. With this error message if you try to use `WireGuard` 
   > `Connection error error=InvalidKey("Proxy mode only supports MASQUE")`
+
+  per Cloudflare's [Set up local proxy mode](https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/configure/modes/#set-up-local-proxy-mode) docs:
+  > Ensure the Device tunnel protocol is set to MASQUE.
