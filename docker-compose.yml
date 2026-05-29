@@ -8,6 +8,12 @@ services:
     restart: unless-stopped
     environment:
       - LICENSE='' # use your own key, for example zero trust or warp+
+      # endpoint overrides (e.g. China network partner). see README "override endpoints"
+      # - OVERRIDE_API_ENDPOINT=1.2.3.4          # orchestration API IP
+      # - OVERRIDE_WARP_ENDPOINT=203.0.113.0:500 # WARP edge IP:UDP port
+    # advanced: mount a full MDM config instead of using OVERRIDE_API_ENDPOINT
+    # volumes:
+    #   - ./mdm.xml:/var/lib/cloudflare-warp/mdm.xml:ro
     logging:
       driver: json-file
       options:
