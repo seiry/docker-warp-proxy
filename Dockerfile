@@ -1,9 +1,7 @@
 ARG DEBIAN_RELEASE=bullseye
-ARG LICENSE=''
 FROM docker.io/debian:$DEBIAN_RELEASE-slim
 ARG DEBIAN_RELEASE
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LICENSE=${LICENSE}
 
 RUN true && \
 	apt update && \

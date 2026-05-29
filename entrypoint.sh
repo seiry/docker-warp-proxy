@@ -34,8 +34,12 @@ fi
 warp-cli --accept-tos mode proxy 2>/dev/null || >&2 echo "mode set by org profile, skipping local mode/port"
 warp-cli --accept-tos proxy port 40001 2>/dev/null || true
 
+# docker-compose's `- LICENSE='...'` keeps the surrounding quotes as part of the value,
+# which makes warp-cli reject the key — strip a single pair of leading/trailing quotes.
+LICENSE="${LICENSE#[\"\']}"
+LICENSE="${LICENSE%[\"\']}"
 if [ "$LICENSE" != "" ]; then
-	warp-cli --accept-tos registration license "$LICENSE" 2>/dev/null || true
+	warp-cli --accept-tos registration license "$LICENSE" || true
 fi
 
 warp-cli --accept-tos connect

@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     environment:
       # use your own wrap+ key or zero trust key.
-      - LICENSE=''
+      - LICENSE=
     # to enroll into a Zero Trust org, mount a full MDM config — see "managed deployment" below
     # volumes:
     #   - ./mdm.xml:/var/lib/cloudflare-warp/mdm.xml:ro
