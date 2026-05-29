@@ -1,0 +1,16 @@
+<dict>
+        <key>override_api_endpoint</key>
+        <string>1.1.1.1</string>
+        <key>override_doh_endpoint</key>
+        <string>1.1.1.1</string>
+        <key>override_warp_endpoint</key>
+        <string>1.1.1.1:443</string>
+        <key>organization</key>
+        <string>your_organization</string>
+        <key>auth_client_id</key>
+        <string>your_client_id.access</string>
+        <key>auth_client_secret</key>
+        <string>your_client_secret</string>
+        <key>onboarding</key>
+        <false/>
+</dict>
