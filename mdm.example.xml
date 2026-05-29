@@ -1,16 +1,29 @@
 <dict>
-        <key>override_api_endpoint</key>
-        <string>1.1.1.1</string>
-        <key>override_doh_endpoint</key>
-        <string>1.1.1.1</string>
-        <key>override_warp_endpoint</key>
-        <string>1.1.1.1:443</string>
-        <key>organization</key>
-        <string>your_organization</string>
-        <key>auth_client_id</key>
-        <string>your_client_id.access</string>
-        <key>auth_client_secret</key>
-        <string>your_client_secret</string>
-        <key>onboarding</key>
-        <false/>
+    <!-- third-party network partner endpoints -->
+    <key>override_api_endpoint</key>
+    <string>1.1.1.1</string>
+    <key>override_doh_endpoint</key>
+    <string>1.1.1.1</string>
+    <key>override_warp_endpoint</key>
+    <string>1.1.1.1:443</string>
+
+    <!-- Zero Trust enrollment via a service token -->
+    <key>organization</key>
+    <string>your_organization</string>
+    <key>auth_client_id</key>
+    <string>your_client_id.access</string>
+    <key>auth_client_secret</key>
+    <string>your_client_secret</string>
+
+    <!-- proxy mode only supports MASQUE -->
+    <key>warp_tunnel_protocol</key>
+    <string>masque</string>
+
+    <!-- run as a local SOCKS proxy on 40001 (socat forwards 40000 -> 40001) -->
+    <key>service_mode</key>
+    <string>proxy</string>
+    <key>proxy_port</key>
+    <integer>40001</integer>
+    <key>onboarding</key>
+    <false/>
 </dict>
