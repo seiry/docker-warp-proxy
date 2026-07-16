@@ -31,6 +31,8 @@ services:
     ports:
       - 40000:40000
     restart: unless-stopped
+    mem_limit: 256m
+    mem_reservation: 128m
     environment:
       # use your own wrap+ key or zero trust key.
       - LICENSE=
