@@ -7,18 +7,19 @@ Docker image to run Cloudflare Warp in proxy mode. Image is rebuilt and updated 
 ## Usage
 
 ### docker hub image
-```
+```bash
 docker run -d -p 40000:40000 --restart unless-stopped seiry/cloudflare-warp-proxy
+
 ```
 
 ### or github package image
-```
+
+```bash
 docker run -d -p 40000:40000 --restart unless-stopped ghcr.io/seiry/cloudflare-warp-proxy
+
 ```
 
-A **SOCKS5** proxy will be listening at port 40000 (this is WARP's proxy mode,
-exposed via `socat`). The same port also accepts HTTP `CONNECT`, so you can point
-either a `socks5h://` / `socks5://` or an `http://` client at it — see [test](#test).
+A **multiplexed** proxy will be listening at port 40000. Under the hood, this uses `gost` to forward traffic to WARP's internal proxy. This setup allows the same port to automatically accept **both SOCKS5 and HTTP** proxy connections seamlessly. You can point a `socks5h://`, `socks5://`, or an `http://` client directly at it — see [test](#test).
 
 ### docker-compose
 
@@ -100,14 +101,15 @@ using a **service token**. The same file pins the partner's endpoint overrides
 
 `service_mode`/`proxy_port` put the client into proxy mode locally. The Cloudflare One
 Client gives precedence to local settings, so this overrides the org's device profile —
-keep `proxy_port` at `40001` to match the `socat` forward (`40000 → 40001`) in the container.
+keep `proxy_port` at `40001` to match the `gost` forward (`40000 → 40001`) in the container.
 
 ### 3. run with the file mounted
 
-```
+```bash
 docker run -d -p 40000:40000 --restart unless-stopped \
   -v ./mdm.xml:/var/lib/cloudflare-warp/mdm.xml:ro \
   seiry/cloudflare-warp-proxy
+
 ```
 
 A service-token enrolled device shows up under **My Team → Devices** with email
@@ -140,7 +142,7 @@ curl https://www.cloudflare.com/cdn-cgi/trace -x http://127.1:40000  # http mode
 ...
 sni=plaintext
 warp=on
-# 👆wrap on！
+# 👆warp on！
 gateway=off
 ...
 ```
